@@ -3,7 +3,8 @@ FakeWifiConnection
 
 Make android apps believe Wifi is connected.
 
-Handy when using unofficial connection (usb 3g modem / ppp widget, usb reverse tethering ...) or on 3g connection and some app won't work unless it's on wifi.
+Handy in situations where we have a (non wifi) connection, but some app won't do its thing unless it's on wifi
+( android running in virtual machine / emulator, 3g but no wifi around, usb 3g modem connection, usb reverse tethering ...)
 
 Tested on Android KitKat (4.4 RC2), play store working over ppp !
 
