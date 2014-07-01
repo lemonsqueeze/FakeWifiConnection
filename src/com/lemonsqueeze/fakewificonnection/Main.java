@@ -81,8 +81,16 @@ public class Main implements IXposedHookLoadPackage {
 	   {
 	     @Override
 	     protected void beforeHookedMethod(MethodHookParam param) throws Throwable 
-	     {	
-	    	 XposedBridge.log("FakeWifiConnection: getNetworkInfo(" + param.args[0] + ") called.");
+	     {	 
+	    	 int network_type = (Integer) param.args[0];
+	    	 
+	    	 if (network_type == ConnectivityManager.TYPE_WIFI)
+	    	 {
+	    		 XposedBridge.log("FakeWifiConnection: getNetworkInfo(" + network_type + "), faking wifi !");
+	    		 param.setResult(getFakeNetworkInfo());
+	    	 }
+	    	 else
+	    		 XposedBridge.log("FakeWifiConnection: getNetworkInfo(" + network_type + ") called.");
 	     }
 	   });
 	 
