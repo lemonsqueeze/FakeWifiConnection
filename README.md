@@ -8,7 +8,10 @@ Handy in situations where there is a (non wifi) connection, but some app won't d
 
 Tested on Android KitKat 4.4.2, play store working over ppp !
 
+Every app is faked by default. Open FakeWifiConnection app to enable/disable hack temporarily (master switch) or select which apps to fake. Changes take effect immediately (background apps might need a reboot).
+
 You might want to try [HackConnectivity.apk](http://www.digitalmobile.in/community/threads/fake-wifi-to-play-games-with-wifi-requirement.8461/) as well. It didn't work for me, maybe it works with older android versions.
+
 
 Install
 -------
@@ -22,7 +25,7 @@ Install
   Open Xposed Installer->Modules, tick FakeWifiConnection  
   Reboot
 
-No easy way to enable/disable hack at this stage, just de/activate module in Xposed for now.
+- Open FakeWifiConnection app to change settings.
 
 Debugging
 ---------
@@ -32,3 +35,9 @@ Debugging
 Also check Xposed logs:
 
 `logcat | grep Xposed`
+
+Credits
+-------
+
+- rovo89 for awesome Xposed Framework
+- UI code by hamzahrmalik (Force Fast Scroll)

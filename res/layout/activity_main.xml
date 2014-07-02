@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:paddingLeft="@dimen/activity_horizontal_margin" android:paddingTop="@dimen/activity_vertical_margin" android:paddingRight="@dimen/activity_horizontal_margin" android:paddingBottom="@dimen/activity_vertical_margin" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:ads="http://schemas.android.com/apk/res-auto">
+    <TextView android:textAppearance="?android:textAppearanceMedium" android:id="@id/textView1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tick an app to force it to use Wifi" android:layout_alignParentLeft="true" android:layout_alignParentTop="true" />
+    <ListView android:id="@id/appList" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_above="@id/button1" android:layout_below="@id/masterswitch" android:layout_alignParentLeft="true" />
+    <Button android:id="@id/button1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Invert" android:layout_toLeftOf="@id/button2" android:layout_toRightOf="@id/button3" android:layout_alignParentBottom="true" android:onClick="invert" />
+    <Button android:id="@id/button2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Save" android:layout_alignParentRight="true" android:layout_alignParentBottom="true" android:onClick="save" />
+    <Switch android:id="@id/masterswitch" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" android:text="Master Switch" android:layout_below="@id/textView1" android:layout_alignParentLeft="true" android:layout_alignParentRight="true" />
+    <Button android:id="@id/button3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Select All" android:layout_alignParentLeft="true" android:layout_alignParentBottom="true" android:onClick="selectAll" />
+</RelativeLayout>

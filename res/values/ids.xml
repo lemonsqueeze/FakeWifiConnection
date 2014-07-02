@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="textView1">false</item>
+    <item type="id" name="button1">false</item>
+    <item type="id" name="appList">false</item>
+    <item type="id" name="masterswitch">false</item>
+    <item type="id" name="button2">false</item>
+    <item type="id" name="button3">false</item>
+</resources>
