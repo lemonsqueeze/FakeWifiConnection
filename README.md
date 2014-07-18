@@ -41,3 +41,5 @@ Credits
 
 - rovo89 for awesome Xposed Framework
 - UI code by hamzahrmalik (Force Fast Scroll)
+
+Released under [GNU GPL License](https://raw.github.com/lemonsqueeze/FakeWifiConnection/master/LICENSE).
