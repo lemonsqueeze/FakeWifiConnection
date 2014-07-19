@@ -13,8 +13,11 @@ import de.robv.android.xposed.XposedBridge;
 import android.app.Activity;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+
 
 public class Main implements IXposedHookLoadPackage 
 {
@@ -85,10 +88,11 @@ public class Main implements IXposedHookLoadPackage
 	  {  pref.reload();  }
       });	
 
-      // targets:
-      // getActiveNetworkInfo()
-      // getNetworkInfo()
-      // getAllNetworkInfo()		 
+      // *************************************************************************************
+      // ConnectivityManager targets:
+      //   getActiveNetworkInfo()
+      //   getNetworkInfo()
+      //   getAllNetworkInfo()		 
       
       // getActiveNetworkInfo()
       findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
@@ -124,13 +128,49 @@ public class Main implements IXposedHookLoadPackage
 		  XposedBridge.log("FakeWifiConnection: " + called + " called.");
 	  }
       });	 
+
+      // *************************************************************************************      
+      // WifiManager targets:
+      //   isWifiEnabled()      
+      //   getWifiState()
+      //   getConnectionInfo()
+
+      // isWifiEnabled()
+      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader, 
+			"isWifiEnabled", new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	      {
+		  XposedBridge.log("FakeWifiConnection: isWifiEnabled() called, faking wifi !");
+		  param.setResult(true);
+	      }
+      });
+
+      // getWifiState()
+      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader, 
+			"getWifiState", new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	      {
+		  XposedBridge.log("FakeWifiConnection: getWifiState() called, faking wifi !");
+		  param.setResult(WIFI_STATE_ENABLED);
+	      }
+      });
+      
+      
+      // getConnectionInfo()
+      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader, 
+			"getConnectionInfo", new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	      {	 XposedBridge.log("FakeWifiConnection: getConnectionInfo() called.");   }
+      });
+
+
   }
     
 }
-
-
-
-
-
-
 
