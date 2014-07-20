@@ -16,6 +16,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.SupplicantState;
+import android.util.Log;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -26,22 +27,34 @@ public class Main implements IXposedHookLoadPackage
   private XSharedPreferences pref;
   private LoadPackageParam lpparam;
 
-  public boolean app_enabled()
+  public boolean hack_enabled()
   {
       boolean master_switch = pref.getBoolean("master", true);
       boolean app_enabled = pref.getBoolean(lpparam.packageName, true);
       return (master_switch && app_enabled);
+  }
+
+  public void dump_stack_trace()
+  {
+      Log.d("FakeWifiConnection", Log.getStackTraceString(new Exception()));
+  }
+
+  public void log_call(String s)
+  {      
+      //XposedBridge.log("FakeWifiConnection: " + s);
+      Log.d("FakeWifiConnection", s);
+      dump_stack_trace();
   }
     
   public void doit_networkinfo(String called, MethodHookParam param) throws Exception
   {	 
 //      XposedBridge.log("FakeWifiConnection:" +
 //		       " master=" + master_switch +
-//		       " " + lpparam.packageName + "=" + app_enabled );
+//		       " " + lpparam.packageName + "=" + hack_enabled );
      
-      if (!app_enabled())
+      if (!hack_enabled())
       {
-	  XposedBridge.log("FakeWifiConnection: " + called + ", hack is disabled.");
+	  log_call(called + ", hack is disabled.");
 	  return;
       }
      
@@ -52,12 +65,12 @@ public class Main implements IXposedHookLoadPackage
 	  if (network.getType() == ConnectivityManager.TYPE_WIFI &&
 	      network.isConnected())
 	  {
-	      XposedBridge.log("FakeWifiConnection: " + called + ", on wifi already.");
+	      log_call(called + ", on wifi already.");
 	      return;
 	  }
       }
 	
-      XposedBridge.log("FakeWifiConnection: " + called + ", faking wifi !");
+      log_call(called + ", faking wifi !");
       param.setResult(getFakeNetworkInfo());
  }
 	
@@ -154,7 +167,9 @@ public class Main implements IXposedHookLoadPackage
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
-	      {	 XposedBridge.log("FakeWifiConnection: getAllNetworkInfo() called.");   }
+	      {
+		  log_call("getAllNetworkInfo() called.");
+	      }
       });
 	 
       // getNetworkInfo(int)
@@ -170,7 +185,7 @@ public class Main implements IXposedHookLoadPackage
 	      if (network_type == ConnectivityManager.TYPE_WIFI)
 		  doit_networkinfo(called, param);
 	      else
-		  XposedBridge.log("FakeWifiConnection: " + called + " called.");
+		  log_call(called + " called.");
 	  }
       });	 
 
@@ -193,9 +208,10 @@ public class Main implements IXposedHookLoadPackage
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	      {
-		  XposedBridge.log("FakeWifiConnection: isWifiEnabled() called" +
-				   (app_enabled() ? ", faking wifi !" : ""));
-		  if (app_enabled())
+		  log_call("isWifiEnabled() called" +
+			   (hack_enabled() ? ", faking wifi !" : ""));
+		  
+		  if (hack_enabled())
 		      param.setResult(true);
 	      }
       });
@@ -207,9 +223,10 @@ public class Main implements IXposedHookLoadPackage
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	      {
-		  XposedBridge.log("FakeWifiConnection: getWifiState() called" +
-				   (app_enabled() ? ", faking wifi !" : ""));
-		  if (app_enabled())		  
+		  log_call("getWifiState() called" +
+			   (hack_enabled() ? ", faking wifi !" : ""));
+		  
+		  if (hack_enabled())		  
 		      param.setResult(WifiManager.WIFI_STATE_ENABLED);
 	      }
       });
@@ -222,9 +239,10 @@ public class Main implements IXposedHookLoadPackage
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	      {
-		  XposedBridge.log("FakeWifiConnection: getConnectionInfo() called" +
-				   (app_enabled() ? ", faking wifi !" : ""));		  
-		  if (app_enabled())
+		  log_call("getConnectionInfo() called" +
+			   (hack_enabled() ? ", faking wifi !" : ""));
+		  
+		  if (hack_enabled())
 		      param.setResult(createWifiInfo());
 	      }
       });
@@ -239,7 +257,7 @@ public class Main implements IXposedHookLoadPackage
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	      {
-		  XposedBridge.log("FakeWifiConnection: createWifiLock(String) called");
+		  log_call("createWifiLock(String) called");
 	      }
       });
 
@@ -250,7 +268,7 @@ public class Main implements IXposedHookLoadPackage
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	      {
-		  XposedBridge.log("FakeWifiConnection: createWifiLock(int, String) called");
+		  log_call("createWifiLock(int, String) called");
 	      }
       });
       
@@ -262,7 +280,7 @@ public class Main implements IXposedHookLoadPackage
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	      {
-		  XposedBridge.log("FakeWifiConnection: getConfiguredNetworks() called");
+		  log_call("getConfiguredNetworks() called");
 	      }
       });
 
