@@ -14,6 +14,8 @@ import android.app.Activity;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.SupplicantState;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -21,18 +23,23 @@ import java.lang.reflect.Field;
 
 public class Main implements IXposedHookLoadPackage 
 {
-  XSharedPreferences pref;
+  private XSharedPreferences pref;
+  private LoadPackageParam lpparam;
 
-  public void doit(LoadPackageParam lpparam, String called, MethodHookParam param) throws Exception
-  {	 
+  public boolean app_enabled()
+  {
       boolean master_switch = pref.getBoolean("master", true);
       boolean app_enabled = pref.getBoolean(lpparam.packageName, true);
+      return (master_switch && app_enabled);
+  }
+    
+  public void doit_networkinfo(String called, MethodHookParam param) throws Exception
+  {	 
+//      XposedBridge.log("FakeWifiConnection:" +
+//		       " master=" + master_switch +
+//		       " " + lpparam.packageName + "=" + app_enabled );
      
-      XposedBridge.log("FakeWifiConnection:" +
-		       " master=" + master_switch +
-		       " " + lpparam.packageName + "=" + app_enabled );
-     
-      if (!(master_switch && app_enabled))
+      if (!app_enabled())
       {
 	  XposedBridge.log("FakeWifiConnection: " + called + ", hack is disabled.");
 	  return;
@@ -65,18 +72,56 @@ public class Main implements IXposedHookLoadPackage
       Constructor<NetworkInfo> ctor = NetworkInfo.class.getDeclaredConstructor(int.class);
       ctor.setAccessible(true);
       NetworkInfo networkInfo = ctor.newInstance(0);
-      Field typeField = NetworkInfo.class.getDeclaredField("mNetworkType");
-      Field connectedField = NetworkInfo.class.getDeclaredField("mState");
-      typeField.setAccessible(true);
-      connectedField.setAccessible(true);
-      typeField.setInt(networkInfo, type);
-      connectedField.set(networkInfo, connected == true ? NetworkInfo.State.CONNECTED : NetworkInfo.State.DISCONNECTED);
+      
+      XposedHelpers.setIntField((Object)networkInfo, "mNetworkType", type);
+      XposedHelpers.setObjectField((Object)networkInfo, "mTypeName", "WIFI");
+      XposedHelpers.setObjectField((Object)networkInfo, "mState", NetworkInfo.State.CONNECTED);
+      XposedHelpers.setObjectField((Object)networkInfo, "mDetailedState", NetworkInfo.DetailedState.CONNECTED);
       return networkInfo;
   }
- 
-  @Override
-  public void handleLoadPackage(final LoadPackageParam lpparam) throws Throwable
+
+  public Object createWifiSsid() throws Exception 
   {
+      // essentially does
+      // WifiSsid ssid = WifiSsid.createFromAsciiEncoded("FakeWifi");
+      
+      Class cls = XposedHelpers.findClass("android.net.wifi.WifiSsid", lpparam.classLoader);
+      Object wifissid = XposedHelpers.callStaticMethod(cls, "createFromAsciiEncoded", "FakeWifi");           
+      return wifissid;
+  }
+    
+  public WifiInfo createWifiInfo() throws Exception 
+  {
+      // WifiInfo info = new WifiInfo();      
+      WifiInfo info = (WifiInfo) XposedHelpers.newInstance(WifiInfo.class);
+
+// DONE      
+//    private int mNetworkId;
+//    private WifiSsid mWifiSsid;
+//    private SupplicantState mSupplicantState;
+
+// TODO ?
+//    private String mBSSID;
+//    private boolean mHiddenSSID;
+//    /** Received Signal Strength Indicator */
+//    private int mRssi;
+//    /** Link speed in Mbps */
+//    public static final String LINK_SPEED_UNITS = "Mbps";
+//    private int mLinkSpeed;
+//    private InetAddress mIpAddress;
+//    private String mMacAddress;
+      
+      XposedHelpers.setIntField((Object)info, "mNetworkId", 1);      
+      XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid());
+      XposedHelpers.setObjectField((Object)info, "mSupplicantState", SupplicantState.ASSOCIATED);
+      
+      return info;
+  }
+    
+  @Override
+  public void handleLoadPackage(final LoadPackageParam lpp) throws Throwable
+  {
+      lpparam = lpp;
       XposedBridge.log("FakeWifiConnection: Loaded app: " + lpparam.packageName);
 	
       pref = new XSharedPreferences(Main.class.getPackage().getName(), "pref");
@@ -100,7 +145,7 @@ public class Main implements IXposedHookLoadPackage
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
-	  {  doit(lpparam, "getActiveNetworkInfo()", param);   }
+	  {  doit_networkinfo("getActiveNetworkInfo()", param);   }
       });
       
       // getAllNetworkInfo()
@@ -123,7 +168,7 @@ public class Main implements IXposedHookLoadPackage
 	      String called = "getNetworkInfo(" + network_type + ")";
 	      
 	      if (network_type == ConnectivityManager.TYPE_WIFI)
-		  doit(lpparam, called, param);
+		  doit_networkinfo(called, param);
 	      else
 		  XposedBridge.log("FakeWifiConnection: " + called + " called.");
 	  }
@@ -135,6 +180,12 @@ public class Main implements IXposedHookLoadPackage
       //   getWifiState()
       //   getConnectionInfo()
 
+      // TODO do we need these:
+      //   createWifiLock(string)
+      //   createWifiLock(int, string)
+      //   getConfiguredNetworks()
+      //      for WifiConfiguration ...
+
       // isWifiEnabled()
       findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader, 
 			"isWifiEnabled", new XC_MethodHook() 
@@ -142,8 +193,10 @@ public class Main implements IXposedHookLoadPackage
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	      {
-		  XposedBridge.log("FakeWifiConnection: isWifiEnabled() called, faking wifi !");
-		  param.setResult(true);
+		  XposedBridge.log("FakeWifiConnection: isWifiEnabled() called" +
+				   (app_enabled() ? ", faking wifi !" : ""));
+		  if (app_enabled())
+		      param.setResult(true);
 	      }
       });
 
@@ -154,8 +207,10 @@ public class Main implements IXposedHookLoadPackage
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	      {
-		  XposedBridge.log("FakeWifiConnection: getWifiState() called, faking wifi !");
-		  param.setResult(WIFI_STATE_ENABLED);
+		  XposedBridge.log("FakeWifiConnection: getWifiState() called" +
+				   (app_enabled() ? ", faking wifi !" : ""));
+		  if (app_enabled())		  
+		      param.setResult(WifiManager.WIFI_STATE_ENABLED);
 	      }
       });
       
@@ -166,10 +221,52 @@ public class Main implements IXposedHookLoadPackage
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
-	      {	 XposedBridge.log("FakeWifiConnection: getConnectionInfo() called.");   }
+	      {
+		  XposedBridge.log("FakeWifiConnection: getConnectionInfo() called" +
+				   (app_enabled() ? ", faking wifi !" : ""));		  
+		  if (app_enabled())
+		      param.setResult(createWifiInfo());
+	      }
       });
 
+      // *************************************************************************************
+      // debug only
+      
+      // createWifiLock(string)
+      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader, 
+			"createWifiLock", String.class, new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	      {
+		  XposedBridge.log("FakeWifiConnection: createWifiLock(String) called");
+	      }
+      });
 
+      // createWifiLock(int, string)
+      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader, 
+			"createWifiLock", int.class, String.class, new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	      {
+		  XposedBridge.log("FakeWifiConnection: createWifiLock(int, String) called");
+	      }
+      });
+      
+
+      // getConfiguredNetworks()
+      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader, 
+			"getConfiguredNetworks", new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	      {
+		  XposedBridge.log("FakeWifiConnection: getConfiguredNetworks() called");
+	      }
+      });
+
+      
   }
     
 }
