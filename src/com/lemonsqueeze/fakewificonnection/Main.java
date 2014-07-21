@@ -27,6 +27,9 @@ public class Main implements IXposedHookLoadPackage
   private XSharedPreferences pref;
   private LoadPackageParam lpparam;
 
+  // debug info: 0=quiet, 1=log function calls, 2=also dump stack traces
+  private final int debug_level = 1;
+
   public boolean hack_enabled()
   {
       boolean master_switch = pref.getBoolean("master", true);
@@ -40,10 +43,15 @@ public class Main implements IXposedHookLoadPackage
   }
 
   public void log_call(String s)
-  {      
+  {
+      if (debug_level < 1)
+	  return;
+      
       //XposedBridge.log("FakeWifiConnection: " + s);
       Log.d("FakeWifiConnection", s);
-      dump_stack_trace();
+
+      if (debug_level > 1)
+	  dump_stack_trace();
   }
     
   public void doit_networkinfo(String called, MethodHookParam param) throws Exception
@@ -90,6 +98,7 @@ public class Main implements IXposedHookLoadPackage
       XposedHelpers.setObjectField((Object)networkInfo, "mTypeName", "WIFI");
       XposedHelpers.setObjectField((Object)networkInfo, "mState", NetworkInfo.State.CONNECTED);
       XposedHelpers.setObjectField((Object)networkInfo, "mDetailedState", NetworkInfo.DetailedState.CONNECTED);
+      XposedHelpers.setBooleanField((Object)networkInfo, "mIsAvailable", true);
       return networkInfo;
   }
 
@@ -108,18 +117,10 @@ public class Main implements IXposedHookLoadPackage
       // WifiInfo info = new WifiInfo();      
       WifiInfo info = (WifiInfo) XposedHelpers.newInstance(WifiInfo.class);
 
-// DONE      
-//    private int mNetworkId;
-//    private WifiSsid mWifiSsid;
-//    private SupplicantState mSupplicantState;
-
-// TODO ?
-//    private String mBSSID;
+// NEEDED ?
 //    private boolean mHiddenSSID;
-//    /** Received Signal Strength Indicator */
-//    private int mRssi;
-//    /** Link speed in Mbps */
-//    public static final String LINK_SPEED_UNITS = "Mbps";
+//    private int mRssi;	/** Received Signal Strength Indicator */
+//    public static final String LINK_SPEED_UNITS = "Mbps";	/** Link speed in Mbps */
 //    private int mLinkSpeed;
 //    private InetAddress mIpAddress;
 //    private String mMacAddress;
@@ -127,6 +128,7 @@ public class Main implements IXposedHookLoadPackage
       XposedHelpers.setIntField((Object)info, "mNetworkId", 1);      
       XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid());
       XposedHelpers.setObjectField((Object)info, "mSupplicantState", SupplicantState.ASSOCIATED);
+      XposedHelpers.setObjectField((Object)info, "mBSSID", "11:22:33:44:55:66");
       
       return info;
   }
