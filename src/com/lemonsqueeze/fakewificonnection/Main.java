@@ -33,7 +33,7 @@ public class Main implements IXposedHookLoadPackage
   public boolean hack_enabled()
   {
       boolean master_switch = pref.getBoolean("master", true);
-      boolean app_enabled = pref.getBoolean(lpparam.packageName, true);
+      boolean app_enabled = pref.getBoolean(lpparam.packageName, false);
       return (master_switch && app_enabled);
   }
 

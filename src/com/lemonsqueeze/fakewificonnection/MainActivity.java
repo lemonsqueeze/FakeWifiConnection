@@ -125,7 +125,7 @@ public class MainActivity extends Activity
   public void load() 
   {
       for (int i = 0; i < pinfos.size(); i++)      
-	  app_list.setItemChecked(i, pref.getBoolean(pinfos.get(i).pname, true));
+	  app_list.setItemChecked(i, pref.getBoolean(pinfos.get(i).pname, false));
       
       masterSwitch = (Switch) findViewById(R.id.masterswitch);
       masterSwitch.setChecked(pref.getBoolean("master", true));

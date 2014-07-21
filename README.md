@@ -8,7 +8,7 @@ Handy in situations where there is a (non wifi) connection, but some app won't d
 
 Tested on Android KitKat 4.4.2, play store working over ppp !
 
-Every app is faked by default. Open FakeWifiConnection app to enable/disable hack temporarily (master switch) or select which apps to fake. Changes take effect immediately (background apps might need a reboot).
+No app is faked by default. Open FakeWifiConnection app to enable/disable hack (master switch) and select which apps to fake. Changes take effect immediately (background apps need a reboot).
 
 You might want to try [HackConnectivity.apk](http://www.digitalmobile.in/community/threads/fake-wifi-to-play-games-with-wifi-requirement.8461/) as well. It didn't work for me, maybe it works with older android versions.
 
