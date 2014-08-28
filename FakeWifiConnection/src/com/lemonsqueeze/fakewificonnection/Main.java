@@ -140,7 +140,7 @@ public class Main implements IXposedHookLoadPackage
       IPInfo ip = getIPInfo();            
       XposedHelpers.setIntField((Object)info, "mNetworkId", 1);      
       XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid());
-      XposedHelpers.setObjectField((Object)info, "mSupplicantState", SupplicantState.ASSOCIATED);
+      XposedHelpers.setObjectField((Object)info, "mSupplicantState", SupplicantState.COMPLETED);
       XposedHelpers.setObjectField((Object)info, "mBSSID", "66:55:44:33:22:11");
       XposedHelpers.setObjectField((Object)info, "mMacAddress", "11:22:33:44:55:66");
       XposedHelpers.setObjectField((Object)info, "mIpAddress", ip.addr);
