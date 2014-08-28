@@ -134,8 +134,6 @@ public class Main implements IXposedHookLoadPackage
 // NEEDED ?
 //    private boolean mHiddenSSID;
 //    private int mRssi;	/** Received Signal Strength Indicator */
-//    public static final String LINK_SPEED_UNITS = "Mbps";	/** Link speed in Mbps */
-//    private int mLinkSpeed;
 
       IPInfo ip = getIPInfo();            
       XposedHelpers.setIntField((Object)info, "mNetworkId", 1);      
@@ -144,6 +142,7 @@ public class Main implements IXposedHookLoadPackage
       XposedHelpers.setObjectField((Object)info, "mBSSID", "66:55:44:33:22:11");
       XposedHelpers.setObjectField((Object)info, "mMacAddress", "11:22:33:44:55:66");
       XposedHelpers.setObjectField((Object)info, "mIpAddress", ip.addr);
+      XposedHelpers.setIntField((Object)info, "mLinkSpeed", 65);  // Mbps
       
       return info;
   }
