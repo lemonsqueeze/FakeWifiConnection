@@ -95,6 +95,44 @@ public class Main implements IXposedHookLoadPackage
       log_call(called + ", faking wifi !");
       param.setResult(getFakeNetworkInfo());
  }
+
+  private static Object[] push(Object[] array, Object item)
+  {
+      Object[] longer = new Object[array.length + 1];
+      System.arraycopy(array, 0, longer, 0, array.length);
+      longer[array.length] = item;
+      return longer;
+  }
+    
+  public void doit_allnetworkinfo(String called, MethodHookParam param) throws Exception
+  {
+      if (!hack_enabled())
+      {
+	  log_call(called + ", hack is disabled.");
+	  return;
+      }
+
+      NetworkInfo[] networks = (NetworkInfo[]) param.getResult();
+      int i;			// wifi networkinfo index
+      boolean wifi_found = false;
+      for (i = 0; i < networks.length; i++)
+	  if (networks[i].getType() == ConnectivityManager.TYPE_WIFI)
+	  {  wifi_found = true;  break;  }
+      
+      // if we're already on wifi don't interfere.
+      if (wifi_found && networks[i].isConnected())
+      {
+	  log_call(called + ", on wifi already.");
+	  return;
+      }
+
+      log_call(called + ", faking wifi !");
+      if (wifi_found)
+	  networks[i] = getFakeNetworkInfo();
+      else
+	  networks = (NetworkInfo[]) push(networks, getFakeNetworkInfo());
+      param.setResult(networks);
+ }    
 	
   public NetworkInfo	getFakeNetworkInfo() throws Exception
   {
@@ -263,9 +301,7 @@ public class Main implements IXposedHookLoadPackage
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
-	      {
-		  log_call("getAllNetworkInfo() called.");
-	      }
+	  {  doit_allnetworkinfo("getAllNetworkInfo()", param);   }
       });
 	 
       // getNetworkInfo(int)
