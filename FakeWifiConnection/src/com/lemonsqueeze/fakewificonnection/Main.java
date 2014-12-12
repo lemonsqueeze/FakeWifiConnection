@@ -1,6 +1,5 @@
 package com.lemonsqueeze.fakewificonnection;
 
-import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 import de.robv.android.xposed.*;
 import de.robv.android.xposed.XC_MethodHook.MethodHookParam;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
@@ -264,6 +263,26 @@ public class Main implements IXposedHookLoadPackage
       return i;
   }
 
+  // Same as XposedHelper's findAndHookMethod() but shows error msg instead of throwing exception
+  // (and returns void)
+  private void hook_method(Class<?> clazz, String methodName, Object... parameterTypesAndCallback)
+  {
+      try
+      {   XposedHelpers.findAndHookMethod(clazz, methodName, parameterTypesAndCallback);  }
+      catch (NoSuchMethodError e)
+      {   log("couldn't hook method " + methodName);   }
+  }
+
+  // idem
+  private void hook_method(String className, ClassLoader classLoader, String methodName,
+				  Object... parameterTypesAndCallback)
+  {
+      try
+      {   XposedHelpers.findAndHookMethod(className, classLoader, methodName, parameterTypesAndCallback);  }
+      catch (NoSuchMethodError e)
+      {   log("couldn't hook method " + methodName);   }
+  }
+  
   @Override
   public void handleLoadPackage(final LoadPackageParam lpp) throws Throwable
   {
@@ -271,8 +290,8 @@ public class Main implements IXposedHookLoadPackage
       log("Loaded app: " + lpparam.packageName);
 	
       pref = new XSharedPreferences(Main.class.getPackage().getName(), "pref");
-
-      XposedHelpers.findAndHookMethod((Class)Activity.class, "onResume", new XC_MethodHook()
+      
+      hook_method((Class)Activity.class, "onResume", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -296,8 +315,8 @@ public class Main implements IXposedHookLoadPackage
       // http://androidxref.com/4.4.2_r2/xref/frameworks/base/services/java/com/android/server/ConnectivityService.java
       
       // getActiveNetworkInfo()
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader,
-			"getActiveNetworkInfo", new XC_MethodHook()
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "getActiveNetworkInfo", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -305,8 +324,8 @@ public class Main implements IXposedHookLoadPackage
       });
       
       // getActiveNetworkInfoForUid(int)		UNDOCUMENTED
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
-			"getActiveNetworkInfoForUid", int.class, new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "getActiveNetworkInfoForUid", int.class, new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
@@ -318,26 +337,28 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // getProvisioningOrActiveNetworkInfo()		UNDOCUMENTED
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
-			"getProvisioningOrActiveNetworkInfo", new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "getProvisioningOrActiveNetworkInfo", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	  {  doit_networkinfo("getProvisioningOrActiveNetworkInfo()", param);   }
       });
 
+      /*  NOT FOUND ...
       // getActiveNetworkInfoUnfiltered()		UNDOCUMENTED
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
-			"getActiveNetworkInfoUnfiltered", new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "getActiveNetworkInfoUnfiltered", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	  {  doit_networkinfo("getActiveNetworkInfoUnfiltered()", param);   }
-      });            
+      });
+      */
       
       // getAllNetworkInfo()
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader,
-			"getAllNetworkInfo", new XC_MethodHook()
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "getAllNetworkInfo", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -345,8 +366,8 @@ public class Main implements IXposedHookLoadPackage
       });
 	
       // getNetworkInfo(int)
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader,
-			"getNetworkInfo", int.class, new XC_MethodHook()
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "getNetworkInfo", int.class, new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -362,8 +383,8 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // isActiveNetworkMetered()
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
-			"isActiveNetworkMetered", new XC_MethodHook()
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "isActiveNetworkMetered", new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
@@ -378,8 +399,8 @@ public class Main implements IXposedHookLoadPackage
 
 
       // requestRouteToHost(int, int)		LOG ONLY
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
-			"requestRouteToHost", int.class, int.class, new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "requestRouteToHost", int.class, int.class, new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
@@ -393,8 +414,8 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // getActiveLinkProperties()		LOG ONLY
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
-			"getActiveLinkProperties", new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "getActiveLinkProperties", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
@@ -404,8 +425,8 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // getLinkProperties(int)			LOG ONLY
-      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
-			"getLinkProperties", int.class, new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+		  "getLinkProperties", int.class, new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
@@ -431,8 +452,8 @@ public class Main implements IXposedHookLoadPackage
       //      for WifiConfiguration ...
 
       // isWifiEnabled()
-      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader,
-			"isWifiEnabled", new XC_MethodHook()
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
+		  "isWifiEnabled", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -444,8 +465,8 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // getWifiState()
-      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader,
-			"getWifiState", new XC_MethodHook()
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
+		  "getWifiState", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -458,8 +479,8 @@ public class Main implements IXposedHookLoadPackage
 
 
       // getConnectionInfo()
-      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader,
-			"getConnectionInfo", new XC_MethodHook()
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
+		  "getConnectionInfo", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -471,8 +492,8 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // getDhcpInfo()
-      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader,
-			"getDhcpInfo", new XC_MethodHook()
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
+		  "getDhcpInfo", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
@@ -488,8 +509,8 @@ public class Main implements IXposedHookLoadPackage
       // debug only
 
       // createWifiLock(string)
-      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader,
-			"createWifiLock", String.class, new XC_MethodHook()
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
+		  "createWifiLock", String.class, new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -497,8 +518,8 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // createWifiLock(int, string)
-      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader,
-			"createWifiLock", int.class, String.class, new XC_MethodHook()
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
+		  "createWifiLock", int.class, String.class, new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -507,8 +528,8 @@ public class Main implements IXposedHookLoadPackage
 
 
       // getConfiguredNetworks()
-      findAndHookMethod("android.net.wifi.WifiManager", lpparam.classLoader,
-			"getConfiguredNetworks", new XC_MethodHook()
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
+		  "getConfiguredNetworks", new XC_MethodHook() 
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
