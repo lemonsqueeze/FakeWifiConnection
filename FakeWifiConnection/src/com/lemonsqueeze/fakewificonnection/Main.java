@@ -53,7 +53,8 @@ public class Main implements IXposedHookLoadPackage
 	  return;
 
       //XposedBridge.log("FakeWifiConnection: " + s);
-      Log.d("FakeWifiConnection", s);
+      Log.d("FakeWifiConnection", lpparam.packageName + " " + s);
+      //Log.d("FakeWifiConnection", s);
   }
 
   public void log_call(String s)
@@ -62,8 +63,9 @@ public class Main implements IXposedHookLoadPackage
 	  return;
 
       //XposedBridge.log("FakeWifiConnection: " + s);
-      Log.d("FakeWifiConnection", s);
-
+      Log.d("FakeWifiConnection", lpparam.packageName + " " + s);
+      //Log.d("FakeWifiConnection", s);
+      
       if (debug_level > 1)
 	  dump_stack_trace();
   }
@@ -170,12 +172,13 @@ public class Main implements IXposedHookLoadPackage
       //    private int mRssi;	/** Received Signal Strength Indicator */
 
       IPInfo ip = getIPInfo();
+      InetAddress addr = (ip != null ? ip.addr : null);
       XposedHelpers.setIntField((Object)info, "mNetworkId", 1);
       XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid());
       XposedHelpers.setObjectField((Object)info, "mSupplicantState", SupplicantState.COMPLETED);
       XposedHelpers.setObjectField((Object)info, "mBSSID", "66:55:44:33:22:11");
       XposedHelpers.setObjectField((Object)info, "mMacAddress", "11:22:33:44:55:66");
-      XposedHelpers.setObjectField((Object)info, "mIpAddress", ip.addr);
+      XposedHelpers.setObjectField((Object)info, "mIpAddress", addr);
       XposedHelpers.setIntField((Object)info, "mLinkSpeed", 65);  // Mbps
 
       return info;
@@ -265,7 +268,7 @@ public class Main implements IXposedHookLoadPackage
   public void handleLoadPackage(final LoadPackageParam lpp) throws Throwable
   {
       lpparam = lpp;
-      XposedBridge.log("FakeWifiConnection: Loaded app: " + lpparam.packageName);
+      log("Loaded app: " + lpparam.packageName);
 	
       pref = new XSharedPreferences(Main.class.getPackage().getName(), "pref");
 
@@ -375,10 +378,11 @@ public class Main implements IXposedHookLoadPackage
 			"getDhcpInfo", new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
 	  {
-	      log_call("getDhcpInfo(), " + (hack_enabled() ? "faking wifi" : "called"));     		
-	      if (hack_enabled())
+	      boolean doit = hack_enabled() && getIPInfo() != null;
+	      log_call("getDhcpInfo(), " + (doit ? "faking wifi" : "called"));     			     		  
+	      if (doit)
 		  param.setResult(createDhcpInfo());
 	  }
       });
