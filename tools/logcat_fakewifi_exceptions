@@ -1,0 +1,3 @@
+#!/bin/bash
+
+grep 'at com.lemonsqueeze.fakewifi' "$1"

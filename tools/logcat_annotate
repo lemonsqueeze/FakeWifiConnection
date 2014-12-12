@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+# annotate android logcat with appnames
+
+my $log = $ARGV[0];
+
+my %pid_to_name;
+my @tab = split("\n", `logcat_appnames < $log`);
+
+foreach my $str (@tab)
+{
+    my ($pid, $name) = split(" ", $str);
+    $pid_to_name{$pid} = $name;
+}
+
+open(IN, "< $log");
+foreach my $str (<IN>)
+{
+    my $head = "";
+    if ($str =~ m|^([a-zA-Z0-9 /_-]*)\( *([0-9]*)\)|)
+    {   $head = $pid_to_name{$2};  }
+    printf("%-40s $str", $head);
+}
