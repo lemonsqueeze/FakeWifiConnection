@@ -70,7 +70,7 @@ public class Main implements IXposedHookLoadPackage
   }
 
   public void doit_networkinfo(String called, MethodHookParam param) throws Exception
-  {	
+  {
       if (!hack_enabled())
       {
 	  log_call(called + ", hack disabled");
@@ -237,9 +237,9 @@ public class Main implements IXposedHookLoadPackage
   private static int InetAddress_to_hex(InetAddress a)
   {
       int result = 0;
-      byte b[] = a.getAddress();		
+      byte b[] = a.getAddress();
       for (int i = 0; i < 4; i++)
-	  result |= (b[i] & 0xff) << (8 * i);			
+	  result |= (b[i] & 0xff) << (8 * i);
       return result;
   }
 
@@ -291,12 +291,12 @@ public class Main implements IXposedHookLoadPackage
 	
       pref = new XSharedPreferences(Main.class.getPackage().getName(), "pref");
       
-      hook_method((Class)Activity.class, "onResume", new XC_MethodHook() 
+      hook_method((Class)Activity.class, "onResume", new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {  pref.reload();  }
-      });	
+      });
 
       // *************************************************************************************
       // ConnectivityManager targets:
@@ -309,14 +309,14 @@ public class Main implements IXposedHookLoadPackage
       //   isActiveNetworkMetered()
       //   requestRouteToHost()
       //   getActiveLinkProperties()			UNDOCUMENTED
-      //   getLinkProperties( int )			
+      //   getLinkProperties( int )
       
       // ConnectivityManager api, including undocumented stuff:
       // http://androidxref.com/4.4.2_r2/xref/frameworks/base/services/java/com/android/server/ConnectivityService.java
       
       // getActiveNetworkInfo()
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
-		  "getActiveNetworkInfo", new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
+		  "getActiveNetworkInfo", new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -324,11 +324,11 @@ public class Main implements IXposedHookLoadPackage
       });
       
       // getActiveNetworkInfoForUid(int)		UNDOCUMENTED
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
-		  "getActiveNetworkInfoForUid", int.class, new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
+		  "getActiveNetworkInfoForUid", int.class, new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {
 	      int uid = (Integer) param.args[0];
 	      String called = "getActiveNetworkInfoForUid(" + uid + ")";
@@ -337,28 +337,28 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // getProvisioningOrActiveNetworkInfo()		UNDOCUMENTED
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
-		  "getProvisioningOrActiveNetworkInfo", new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
+		  "getProvisioningOrActiveNetworkInfo", new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {  doit_networkinfo("getProvisioningOrActiveNetworkInfo()", param);   }
       });
 
       /*  NOT FOUND ...
       // getActiveNetworkInfoUnfiltered()		UNDOCUMENTED
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
-		  "getActiveNetworkInfoUnfiltered", new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
+		  "getActiveNetworkInfoUnfiltered", new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {  doit_networkinfo("getActiveNetworkInfoUnfiltered()", param);   }
       });
       */
       
       // getAllNetworkInfo()
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
-		  "getAllNetworkInfo", new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
+		  "getAllNetworkInfo", new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -366,12 +366,12 @@ public class Main implements IXposedHookLoadPackage
       });
 	
       // getNetworkInfo(int)
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
-		  "getNetworkInfo", int.class, new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
+		  "getNetworkInfo", int.class, new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
-	  {	
+	  {
 	      int network_type = (Integer) param.args[0];
 	      String called = "getNetworkInfo(" + network_type + ")";
 	
@@ -383,11 +383,11 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // isActiveNetworkMetered()
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
 		  "isActiveNetworkMetered", new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {
 	      if (!hack_enabled())
 	      {	  log_call("isActiveNetworkMetered(), hack is disabled.");  return;  }
@@ -399,12 +399,12 @@ public class Main implements IXposedHookLoadPackage
 
 
       // requestRouteToHost(int, int)		LOG ONLY
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
-		  "requestRouteToHost", int.class, int.class, new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
+		  "requestRouteToHost", int.class, int.class, new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
-	  {	 
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
+	  {
 	      int network_type = (Integer) param.args[0];
 	      int host_addr = (Integer) param.args[1];
 	      String called = "requestRouteToHost(" + network_type + ", " + host_addr + ")";
@@ -414,22 +414,22 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // getActiveLinkProperties()		LOG ONLY
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
-		  "getActiveLinkProperties", new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
+		  "getActiveLinkProperties", new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
-	  {	 
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
+	  {
 	      log_call("getActiveLinkProperties() called.");
 	  }
       });
 
       // getLinkProperties(int)			LOG ONLY
-      hook_method("android.net.ConnectivityManager", lpparam.classLoader, 
-		  "getLinkProperties", int.class, new XC_MethodHook() 
+      hook_method("android.net.ConnectivityManager", lpparam.classLoader,
+		  "getLinkProperties", int.class, new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {
 	      int network_type = (Integer) param.args[0];
 	      log_call("getLinkProperties(" + network_type + ") called.");
@@ -438,7 +438,7 @@ public class Main implements IXposedHookLoadPackage
 
       
       
-      // *************************************************************************************      
+      // *************************************************************************************
       // WifiManager targets:
       //   isWifiEnabled()
       //   getWifiState()
@@ -452,21 +452,21 @@ public class Main implements IXposedHookLoadPackage
       //      for WifiConfiguration ...
 
       // isWifiEnabled()
-      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
-		  "isWifiEnabled", new XC_MethodHook() 
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
+		  "isWifiEnabled", new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {
-	      log_call("isWifiEnabled(), " + (hack_enabled() ? "faking wifi" : "called"));		
+	      log_call("isWifiEnabled(), " + (hack_enabled() ? "faking wifi" : "called"));
 	      if (hack_enabled())
 		  param.setResult(true);
 	  }
       });
 
       // getWifiState()
-      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
-		  "getWifiState", new XC_MethodHook() 
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
+		  "getWifiState", new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -479,27 +479,27 @@ public class Main implements IXposedHookLoadPackage
 
 
       // getConnectionInfo()
-      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
-		  "getConnectionInfo", new XC_MethodHook() 
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
+		  "getConnectionInfo", new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {
-	      log_call("getConnectionInfo(), " + (hack_enabled() ? "faking wifi" : "called"));		
+	      log_call("getConnectionInfo(), " + (hack_enabled() ? "faking wifi" : "called"));
 	      if (hack_enabled())
 		  param.setResult(createWifiInfo());
 	  }
       });
 
       // getDhcpInfo()
-      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
-		  "getDhcpInfo", new XC_MethodHook() 
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
+		  "getDhcpInfo", new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {
 	      boolean doit = hack_enabled() && getIPInfo() != null;
-	      log_call("getDhcpInfo(), " + (doit ? "faking wifi" : "called"));     			     		  
+	      log_call("getDhcpInfo(), " + (doit ? "faking wifi" : "called"));
 	      if (doit)
 		  param.setResult(createDhcpInfo());
 	  }
@@ -509,8 +509,8 @@ public class Main implements IXposedHookLoadPackage
       // debug only
 
       // createWifiLock(string)
-      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
-		  "createWifiLock", String.class, new XC_MethodHook() 
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
+		  "createWifiLock", String.class, new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -518,8 +518,8 @@ public class Main implements IXposedHookLoadPackage
       });
 
       // createWifiLock(int, string)
-      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
-		  "createWifiLock", int.class, String.class, new XC_MethodHook() 
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
+		  "createWifiLock", int.class, String.class, new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
@@ -528,8 +528,8 @@ public class Main implements IXposedHookLoadPackage
 
 
       // getConfiguredNetworks()
-      hook_method("android.net.wifi.WifiManager", lpparam.classLoader, 
-		  "getConfiguredNetworks", new XC_MethodHook() 
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
+		  "getConfiguredNetworks", new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
