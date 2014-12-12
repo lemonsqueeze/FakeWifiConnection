@@ -285,6 +285,7 @@ public class Main implements IXposedHookLoadPackage
       //   getNetworkInfo()
       //   getAllNetworkInfo()
       //   isActiveNetworkMetered()
+      //   requestRouteToHost()
       
       // getActiveNetworkInfo()
       findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader,
@@ -335,7 +336,22 @@ public class Main implements IXposedHookLoadPackage
 	      param.setResult(false);
 	  }
       });
-      
+
+
+      // requestRouteToHost(int, int)
+      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
+			"requestRouteToHost", int.class, int.class, new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  {	 
+	      int network_type = (Integer) param.args[0];
+	      int host_addr = (Integer) param.args[1];
+	      String called = "requestRouteToHost(" + network_type + ", " + host_addr + ")";
+	      
+	      log_call(called + " called.");    // just log
+	  }
+      });
 
       // *************************************************************************************
       // WifiManager targets:
