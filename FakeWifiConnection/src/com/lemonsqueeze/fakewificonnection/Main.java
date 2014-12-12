@@ -282,10 +282,18 @@ public class Main implements IXposedHookLoadPackage
       // *************************************************************************************
       // ConnectivityManager targets:
       //   getActiveNetworkInfo()
-      //   getNetworkInfo()
+      //   getActiveNetworkInfoForUid( int )		UNDOCUMENTED
+      //   getProvisioningOrActiveNetworkInfo()		UNDOCUMENTED
+      //   getActiveNetworkInfoUnfiltered()		UNDOCUMENTED
+      //   getNetworkInfo( int )
       //   getAllNetworkInfo()
       //   isActiveNetworkMetered()
       //   requestRouteToHost()
+      //   getActiveLinkProperties()			UNDOCUMENTED
+      //   getLinkProperties( int )			
+      
+      // ConnectivityManager api, including undocumented stuff:
+      // http://androidxref.com/4.4.2_r2/xref/frameworks/base/services/java/com/android/server/ConnectivityService.java
       
       // getActiveNetworkInfo()
       findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader,
@@ -295,7 +303,38 @@ public class Main implements IXposedHookLoadPackage
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {   doit_networkinfo("getActiveNetworkInfo()", param);   }
       });
+      
+      // getActiveNetworkInfoForUid(int)		UNDOCUMENTED
+      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
+			"getActiveNetworkInfoForUid", int.class, new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  {
+	      int uid = (Integer) param.args[0];
+	      String called = "getActiveNetworkInfoForUid(" + uid + ")";
+	      doit_networkinfo(called, param);
+	  }
+      });
 
+      // getProvisioningOrActiveNetworkInfo()		UNDOCUMENTED
+      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
+			"getProvisioningOrActiveNetworkInfo", new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  {  doit_networkinfo("getProvisioningOrActiveNetworkInfo()", param);   }
+      });
+
+      // getActiveNetworkInfoUnfiltered()		UNDOCUMENTED
+      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
+			"getActiveNetworkInfoUnfiltered", new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  {  doit_networkinfo("getActiveNetworkInfoUnfiltered()", param);   }
+      });            
+      
       // getAllNetworkInfo()
       findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader,
 			"getAllNetworkInfo", new XC_MethodHook()
@@ -338,7 +377,7 @@ public class Main implements IXposedHookLoadPackage
       });
 
 
-      // requestRouteToHost(int, int)
+      // requestRouteToHost(int, int)		LOG ONLY
       findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
 			"requestRouteToHost", int.class, int.class, new XC_MethodHook() 
       {
@@ -349,11 +388,36 @@ public class Main implements IXposedHookLoadPackage
 	      int host_addr = (Integer) param.args[1];
 	      String called = "requestRouteToHost(" + network_type + ", " + host_addr + ")";
 	      
-	      log_call(called + " called.");    // just log
+	      log_call(called + " called.");
 	  }
       });
 
-      // *************************************************************************************
+      // getActiveLinkProperties()		LOG ONLY
+      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
+			"getActiveLinkProperties", new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  {	 
+	      log_call("getActiveLinkProperties() called.");
+	  }
+      });
+
+      // getLinkProperties(int)			LOG ONLY
+      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
+			"getLinkProperties", int.class, new XC_MethodHook() 
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  {
+	      int network_type = (Integer) param.args[0];
+	      log_call("getLinkProperties(" + network_type + ") called.");
+	  }
+      });
+
+      
+      
+      // *************************************************************************************      
       // WifiManager targets:
       //   isWifiEnabled()
       //   getWifiState()
