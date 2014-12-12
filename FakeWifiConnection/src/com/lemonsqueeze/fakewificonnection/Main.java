@@ -283,8 +283,9 @@ public class Main implements IXposedHookLoadPackage
       // ConnectivityManager targets:
       //   getActiveNetworkInfo()
       //   getNetworkInfo()
-      //   getAllNetworkInfo()		
-
+      //   getAllNetworkInfo()
+      //   isActiveNetworkMetered()
+      
       // getActiveNetworkInfo()
       findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader,
 			"getActiveNetworkInfo", new XC_MethodHook()
@@ -318,7 +319,23 @@ public class Main implements IXposedHookLoadPackage
 	      else
 		  log_call(called + " called");
 	  }
-      });	
+      });
+
+      // isActiveNetworkMetered()
+      findAndHookMethod("android.net.ConnectivityManager", lpparam.classLoader, 
+			"isActiveNetworkMetered", new XC_MethodHook()
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable 
+	  {
+	      if (!hack_enabled())
+	      {	  log_call("isActiveNetworkMetered(), hack is disabled.");  return;  }
+	      
+	      log_call("isActiveNetworkMetered(), faking wifi !");
+	      param.setResult(false);
+	  }
+      });
+      
 
       // *************************************************************************************
       // WifiManager targets:
