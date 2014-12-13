@@ -103,6 +103,7 @@ public class MainActivity extends Activity
       for (int i = 0; i < pinfos.size(); i++)
 	  editor.putBoolean(pinfos.get(i).pname, app_list.isItemChecked(i));
       editor.putBoolean("master", this.masterSwitch.isChecked());
+      editor.putInt("debug_level", pref.getInt("debug_level", 0));
       editor.apply();
       Toast.makeText(this, "Settings saved. Normal apps should pick up changes immediately.", Toast.LENGTH_LONG).show();
       finish();
