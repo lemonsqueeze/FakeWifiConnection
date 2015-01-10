@@ -14,6 +14,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.SupplicantState;
 import android.net.DhcpInfo;
+import android.os.Build;
 import android.util.Log;
 
 import java.net.NetworkInterface;
@@ -180,7 +181,11 @@ public class Main implements IXposedHookLoadPackage
       IPInfo ip = getIPInfo();
       InetAddress addr = (ip != null ? ip.addr : null);
       XposedHelpers.setIntField((Object)info, "mNetworkId", 1);
-      XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid());
+      if(Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+    	  XposedHelpers.setObjectField((Object)info, "mSSID", "FakeWifi");
+      } else {
+    	  XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid());
+      }
       XposedHelpers.setObjectField((Object)info, "mSupplicantState", SupplicantState.COMPLETED);
       XposedHelpers.setObjectField((Object)info, "mBSSID", "66:55:44:33:22:11");
       XposedHelpers.setObjectField((Object)info, "mMacAddress", "11:22:33:44:55:66");
