@@ -5,14 +5,20 @@ import de.robv.android.xposed.XC_MethodHook.MethodHookParam;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 import de.robv.android.xposed.XposedBridge;
 
-//import android.content.Context;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
 //import android.content.SharedPreferences;
 import android.app.Activity;
+import android.os.SystemClock;
+
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.SupplicantState;
+import android.net.wifi.ScanResult;
 import android.net.DhcpInfo;
 import android.util.Log;
 
@@ -30,6 +36,8 @@ public class Main implements IXposedHookLoadPackage
 {
   private XSharedPreferences pref;
   private LoadPackageParam lpparam;
+  private Context app_context = null;
+  private BroadcastReceiver scan_results_receiver = null;    
 
   // debug level: 0=quiet, 1=log function calls, 2=also dump stack traces.
   // install 'Preferences Manager' to change default (0)
@@ -175,7 +183,6 @@ public class Main implements IXposedHookLoadPackage
 
       // NEEDED ?
       //    private boolean mHiddenSSID;
-      //    private int mRssi;	/** Received Signal Strength Indicator */
 
       IPInfo ip = getIPInfo();
       InetAddress addr = (ip != null ? ip.addr : null);
@@ -186,6 +193,7 @@ public class Main implements IXposedHookLoadPackage
       XposedHelpers.setObjectField((Object)info, "mMacAddress", "11:22:33:44:55:66");
       XposedHelpers.setObjectField((Object)info, "mIpAddress", addr);
       XposedHelpers.setIntField((Object)info, "mLinkSpeed", 65);  // Mbps
+      XposedHelpers.setIntField((Object)info, "mRssi", -55);
 
       return info;
   }
@@ -268,6 +276,28 @@ public class Main implements IXposedHookLoadPackage
       log(s);
 
       return i;
+  }
+
+  public ScanResult create_scan_result() throws Exception
+  {
+      Class wifissid_class = XposedHelpers.findClass("android.net.wifi.WifiSsid", lpparam.classLoader);      
+      Constructor<ScanResult> ctor = ScanResult.class.getDeclaredConstructor(
+	  wifissid_class, String.class, String.class, int.class, int.class, long.class);
+      ctor.setAccessible(true);
+      return ctor.newInstance(createWifiSsid(),		// SSID
+			      "66:55:44:33:22:11",	// BSSID      
+			      "[WPA-PSK-TKIP+CCMP][WPA2-PSK-TKIP-CCMP][WPS][ESS]", // capabilities
+			      -55,			// level   (RSSI)
+			      2462,			// frequency (MHz)   channel 11
+			      SystemClock.elapsedRealtime() * 1000);  // timestamp
+  }  
+
+
+  public List<ScanResult> create_scan_results() throws Exception
+  {
+      List<ScanResult> l = new ArrayList<ScanResult>();
+      l.add(create_scan_result());
+      return l;
   }
 
   // Same as XposedHelper's findAndHookMethod() but shows error msg instead of throwing exception
@@ -450,8 +480,10 @@ public class Main implements IXposedHookLoadPackage
       //   getWifiState()
       //   getConnectionInfo()
       //   getDhcpInfo()
+      //   startscan()
+      //   getScanResults()
 
-      // TODO do we need these:
+      // debug only:
       //   createWifiLock(string)
       //   createWifiLock(int, string)
       //   getConfiguredNetworks()
@@ -511,6 +543,39 @@ public class Main implements IXposedHookLoadPackage
 	  }
       });
 
+      // startScan()
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
+		  "startScan", new XC_MethodHook()
+      {
+	  @Override
+	  protected void beforeHookedMethod(MethodHookParam param) throws Throwable
+	  {
+	      boolean doit = hack_enabled() && (scan_results_receiver != null);
+	      log_call("startScan(), " + (doit ? "faking wifi" : "called"));
+	      if (doit)
+	      {
+		  param.setResult(null);	// cancel orig call
+		  Intent intent = new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+		  scan_results_receiver.onReceive(app_context, intent);
+	      }
+	  }
+      });
+
+      // getScanResults()
+      hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
+		  "getScanResults", new XC_MethodHook()
+      {
+	  @Override
+	  protected void beforeHookedMethod(MethodHookParam param) throws Throwable
+	  {
+	      boolean doit = hack_enabled();
+	      log_call("getScanResults(), " + (doit ? "faking wifi" : "called"));
+	      if (doit)
+		  param.setResult(create_scan_results());	// cancel orig call
+	  }
+      });
+      
+      
       // *************************************************************************************
       // debug only
 
@@ -532,7 +597,7 @@ public class Main implements IXposedHookLoadPackage
 	  {   log_call("createWifiLock(int, String) called");    }
       });
 
-
+      
       // getConfiguredNetworks()
       hook_method("android.net.wifi.WifiManager", lpparam.classLoader,
 		  "getConfiguredNetworks", new XC_MethodHook()
@@ -542,6 +607,49 @@ public class Main implements IXposedHookLoadPackage
 	  {   log_call("getConfiguredNetworks() called");     }
       });
 
+
+      // *************************************************************************************
+      // Misc stuff
+      
+      // intent receivers which need to be overridden
+      
+      // abstract Intent   registerReceiver(BroadcastReceiver receiver, IntentFilter filter)
+      // FIXME
+      //   - caller could register multiple receivers
+      //   - there's this one also:
+      //   abstract Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter,
+      //                                    String broadcastPermission, Handler scheduler)
+      //   
+      hook_method("android.content.Context", lpparam.classLoader,
+		  "registerReceiver", BroadcastReceiver.class, IntentFilter.class, new XC_MethodHook()
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
+	  {
+	      BroadcastReceiver receiver = (BroadcastReceiver) param.args[0];
+	      IntentFilter filter = (IntentFilter) param.args[1];
+	      if (filter.hasAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
+	      {
+		  log_call("registerReceiver(SCAN_RESULTS) called");
+		  scan_results_receiver = receiver;
+	      }
+	  }
+      });
+
+      // Activity.onCreate()
+      // FIXME what happens with multiple activities ?
+      hook_method("android.app.Activity", lpparam.classLoader,
+		  "onCreate", new XC_MethodHook()
+      {
+	  @Override
+	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
+	  {
+	      log_call("onCreate() called");
+	      Activity a = (Activity) param.thisObject;
+	      app_context = a.getApplicationContext();
+	  }
+      });	  
+      
   }
 
 }
