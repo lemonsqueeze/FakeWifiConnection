@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 //import android.content.SharedPreferences;
 import android.app.Activity;
+import android.os.Bundle;
 import android.os.SystemClock;
 
 import android.net.ConnectivityManager;
@@ -31,13 +32,14 @@ import org.apache.http.conn.util.InetAddressUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 
+import com.lemonsqueeze.fakewificonnection.HookManager;
 
 public class Main implements IXposedHookLoadPackage
 {
   private XSharedPreferences pref;
   private LoadPackageParam lpparam;
-  private Context app_context = null;
-  private BroadcastReceiver scan_results_receiver = null;    
+    
+  private HookManager hook_manager = new HookManager();
 
   // debug level: 0=quiet, 1=log function calls, 2=also dump stack traces.
   // install 'Preferences Manager' to change default (0)
@@ -550,13 +552,12 @@ public class Main implements IXposedHookLoadPackage
 	  @Override
 	  protected void beforeHookedMethod(MethodHookParam param) throws Throwable
 	  {
-	      boolean doit = hack_enabled() && (scan_results_receiver != null);
+	      boolean doit = hack_enabled();
 	      log_call("startScan(), " + (doit ? "faking wifi" : "called"));
 	      if (doit)
 	      {
 		  param.setResult(null);	// cancel orig call
-		  Intent intent = new Intent(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-		  scan_results_receiver.onReceive(app_context, intent);
+		  hook_manager.call(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
 	      }
 	  }
       });
@@ -619,8 +620,12 @@ public class Main implements IXposedHookLoadPackage
       //   - there's this one also:
       //   abstract Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter,
       //                                    String broadcastPermission, Handler scheduler)
-      //   
-      hook_method("android.content.Context", lpparam.classLoader,
+      //
+
+      // registerReceiver(BroadcastReceiver, IntentFilter)
+      //   we can't hook Context.registerReceiver() which is abstract,
+      //   so hook ContextWrapper which Activity is derived of.
+      hook_method("android.content.ContextWrapper", lpparam.classLoader,
 		  "registerReceiver", BroadcastReceiver.class, IntentFilter.class, new XC_MethodHook()
       {
 	  @Override
@@ -631,24 +636,22 @@ public class Main implements IXposedHookLoadPackage
 	      if (filter.hasAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
 	      {
 		  log_call("registerReceiver(SCAN_RESULTS) called");
-		  scan_results_receiver = receiver;
+		  hook_manager.add(filter, receiver, (Context) param.thisObject);
 	      }
 	  }
       });
 
-      // Activity.onCreate()
-      // FIXME what happens with multiple activities ?
-      hook_method("android.app.Activity", lpparam.classLoader,
-		  "onCreate", new XC_MethodHook()
+      // unregisterReceiver(BroadcastReceiver)
+      hook_method("android.content.ContextWrapper", lpparam.classLoader,
+		  "unregisterReceiver", BroadcastReceiver.class, new XC_MethodHook()
       {
 	  @Override
 	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
 	  {
-	      log_call("onCreate() called");
-	      Activity a = (Activity) param.thisObject;
-	      app_context = a.getApplicationContext();
+	      BroadcastReceiver receiver = (BroadcastReceiver) param.args[0];
+	      hook_manager.remove(receiver);
 	  }
-      });	  
+      });      
       
   }
 
