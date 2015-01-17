@@ -42,7 +42,7 @@ public class Main implements IXposedHookLoadPackage
 
   // debug level: 0=quiet, 1=log function calls, 2=also dump stack traces.
   // install 'Preferences Manager' to change default (0)    
-  private int debug_level;    
+  public int debug_level;    
     
   private HookManager hook_manager = new HookManager();
 
@@ -323,7 +323,9 @@ public class Main implements IXposedHookLoadPackage
       pref = new XSharedPreferences(Main.class.getPackage().getName(), "pref");
       lpparam = lpp;
       debug_level = pref.getInt("debug_level", 0);
-      log("Loaded app: " + lpparam.packageName);	
+      log("Loaded app: " + lpparam.packageName);
+      final boolean hack_enabled_at_startup = hack_enabled();
+      final Main main = this;
       
       hook_method((Class)Activity.class, "onResume", new XC_MethodHook()
       {
@@ -628,7 +630,10 @@ public class Main implements IXposedHookLoadPackage
       {
 	  @Override
 	  protected void beforeHookedMethod(MethodHookParam param) throws Throwable
-	  {   hook_manager.handle_register(param);   }
+	  {
+	      if (hack_enabled_at_startup)
+		  hook_manager.handle_register(param, main);
+	  }
       });
 
       // FIXME  handle this one also:
@@ -642,7 +647,10 @@ public class Main implements IXposedHookLoadPackage
       {
 	  @Override
 	  protected void beforeHookedMethod(MethodHookParam param) throws Throwable
-	  {   hook_manager.handle_unregister(param);   }
+	  {
+	      if (hack_enabled_at_startup)	      
+		  hook_manager.handle_unregister(param);
+	  }
       });      
       
   }

@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.os.PatternMatcher;
 import java.util.*;
 
+import com.lemonsqueeze.fakewificonnection.Main;
 
 public class HookManager
 {
@@ -108,19 +109,6 @@ public class HookManager
 	outside_receivers.remove(r);
     }
 
-    // make intent with the first hooked action (...)
-    public Intent make_returned_intent(final IntentFilter filter)
-    {	
-	Iterator<String> i = filter.actionsIterator();
-	while (i != null && i.hasNext())
-	{
-	    String action = i.next();
-	    if (hooked_actions.contains(action))
-		return make_intent(action);
-	}
-	return null;
-    }
-	    
     // create a copy of filter with just the unhooked actions
     public IntentFilter split_intent_filter(final IntentFilter filter) throws Exception
     {
@@ -188,8 +176,39 @@ public class HookManager
 	
 	return f;
     }
+
+    // make intent with the first hooked action (...)
+    private Intent make_returned_intent(final IntentFilter filter)
+    {	
+	Iterator<String> i = filter.actionsIterator();
+	while (i != null && i.hasNext())
+	{
+	    String action = i.next();
+	    if (hooked_actions.contains(action))
+		return make_intent(action);
+	}
+	return null;
+    }	    
     
-    public void handle_register(MethodHookParam param) throws Throwable
+    private void log_call_register(IntentFilter filter, Main main)
+    {
+	if (main.debug_level < 1)
+	    return;
+	String head = "registerReceiver(";
+	Iterator<String> i = filter.actionsIterator();
+	while (i != null && i.hasNext())
+	{
+	    String action = i.next();
+
+	    if (i.hasNext())
+		main.log_call(head + action + " +");
+	    else
+		main.log_call(head + action + ") handled");
+	    head = "                 ";
+	}
+    }
+    
+    public void handle_register(MethodHookParam param, Main main) throws Throwable
     {
 	BroadcastReceiver receiver = (BroadcastReceiver) param.args[0];
 	IntentFilter filter = (IntentFilter) param.args[1];
@@ -210,9 +229,9 @@ public class HookManager
 	
 	if (!has_hooked)	// let it through
 	    return;
-	
+
+	log_call_register(filter, main);
 	this.add(filter, receiver, (Context) param.thisObject);	
-	//log_call("registerReceiver(SCAN_RESULTS) called");	
 	
 	if (!has_unhooked)	// only hooked actions, 
 	{
