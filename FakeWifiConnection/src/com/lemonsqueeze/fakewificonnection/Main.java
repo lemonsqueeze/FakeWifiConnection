@@ -33,6 +33,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 
 import com.lemonsqueeze.fakewificonnection.HookManager;
+import com.lemonsqueeze.fakewificonnection.HookManager.IntentGenCallback;
 
 public class Main implements IXposedHookLoadPackage
 {
@@ -611,46 +612,42 @@ public class Main implements IXposedHookLoadPackage
 
       // *************************************************************************************
       // Misc stuff
-      
+
+	  
       // intent receivers which need overriding
+
+      hook_manager.add_action(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION, null);
+      hook_manager.add_action(WifiManager.NETWORK_STATE_CHANGED_ACTION, new IntentGenCallback()
+      {
+	  public void handle(Intent intent)
+	      {
+		  // FIXME
+	      }
+      });
 
       // registerReceiver(BroadcastReceiver, IntentFilter)
       //   Context.registerReceiver() is abstract, so hook ContextWrapper
       //   which Activity is derived of (and Service also).
-      // FIXME
-      //   - we let everything through
-      //   - there's this one also:
-      //       abstract Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter,
-      //                                        String broadcastPermission, Handler scheduler)      
       hook_method("android.content.ContextWrapper", lpparam.classLoader,
 		  "registerReceiver", BroadcastReceiver.class, IntentFilter.class, new XC_MethodHook()
       {
 	  @Override
 	  protected void beforeHookedMethod(MethodHookParam param) throws Throwable
-	  {
-	      BroadcastReceiver receiver = (BroadcastReceiver) param.args[0];
-	      IntentFilter filter = (IntentFilter) param.args[1];
-	      int nactions = filter.countActions();
-	      if (filter.hasAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
-	      {
-		  log_call("registerReceiver(SCAN_RESULTS) called");
-		  // Always let it through.
-		  // Otherwise have to keep track of them so unregister doesn't throw exception.
-		  hook_manager.add(filter, receiver, (Context) param.thisObject);
-	      }
-	  }
+	  {   hook_manager.handle_register(param);   }
       });
 
+      // FIXME  handle this one also:
+      //       abstract Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter,
+      //                                        String broadcastPermission, Handler scheduler)
+
+      
       // unregisterReceiver(BroadcastReceiver)
       hook_method("android.content.ContextWrapper", lpparam.classLoader,
 		  "unregisterReceiver", BroadcastReceiver.class, new XC_MethodHook()
       {
 	  @Override
 	  protected void beforeHookedMethod(MethodHookParam param) throws Throwable
-	  {
-	      BroadcastReceiver receiver = (BroadcastReceiver) param.args[0];
-	      hook_manager.remove(receiver);
-	  }
+	  {   hook_manager.handle_unregister(param);   }
       });      
       
   }
