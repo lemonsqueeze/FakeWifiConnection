@@ -65,7 +65,7 @@ public class HookManager
 	Iterator i = hash.entrySet().iterator();
 	Intent intent = make_intent(action);
 	
-	while (i.hasNext())
+	while (i != null && i.hasNext())
 	{
 	    Map.Entry entry = (Map.Entry) i.next();
 	    List<Hook> list = (List<Hook>) entry.getValue();
@@ -112,13 +112,12 @@ public class HookManager
     public Intent make_returned_intent(final IntentFilter filter)
     {	
 	Iterator<String> i = filter.actionsIterator();
-	while (i.hasNext())
+	while (i != null && i.hasNext())
 	{
 	    String action = i.next();
 	    if (hooked_actions.contains(action))
 		return make_intent(action);
 	}
-	assert false;	// shouldn't be reached
 	return null;
     }
 	    
@@ -128,7 +127,7 @@ public class HookManager
 	IntentFilter f = new IntentFilter();
 	
 	{ Iterator<String> i = filter.actionsIterator();
-	    while (i.hasNext())
+	    while (i != null && i.hasNext())
 	    {
 		String action = i.next();
 		if (!hooked_actions.contains(action))
@@ -137,12 +136,12 @@ public class HookManager
 	}
 	
 	{ Iterator<String> i = filter.categoriesIterator();  // gosh this is ugly
-	    while (i.hasNext())
+	    while (i != null && i.hasNext())
 		f.addCategory(i.next());
 	}
 
 	{ Iterator<IntentFilter.AuthorityEntry> i = filter.authoritiesIterator();
-	    while (i.hasNext())
+	    while (i != null && i.hasNext())
 	    {
 		IntentFilter.AuthorityEntry entry = i.next();
 		String port = (entry.getPort() != -1 ? Integer.valueOf(entry.getPort()).toString() : null);
@@ -151,7 +150,7 @@ public class HookManager
 	}
 
 	{ Iterator<PatternMatcher> i = filter.pathsIterator();
-	    while (i.hasNext())
+	    while (i != null && i.hasNext())
 	    {
 		PatternMatcher p = i.next();
 		f.addDataPath(p.getPath(), p.getType());
@@ -159,7 +158,7 @@ public class HookManager
 	}
 
 	{ Iterator<String> i = filter.schemesIterator();
-	    while (i.hasNext())
+	    while (i != null && i.hasNext())
 		f.addDataScheme(i.next());
 	}
 
@@ -171,7 +170,7 @@ public class HookManager
 	      IntentFilter.class.getMethod("schemeSpecificPartsIterator", null)
 	        .invoke(filter, new Object[0]);
 
-	    while (i.hasNext())
+	    while (i != null && i.hasNext())
 	    {
 		PatternMatcher p = i.next();
 		// f.addDataSchemeSpecificPart(p.getPath(), p.getType());
@@ -183,7 +182,7 @@ public class HookManager
 	catch (Exception e) {}
 
 	{ Iterator<String> i = filter.typesIterator();
-	    while (i.hasNext())
+	    while (i != null && i.hasNext())
 		f.addDataType(i.next());
 	}
 	
@@ -200,7 +199,7 @@ public class HookManager
 	boolean has_unhooked = false;
 	
 	Iterator<String> i = filter.actionsIterator();
-	while (i.hasNext())
+	while (i != null && i.hasNext())
 	    if (hooked_actions.contains(i.next()))
 		has_hooked = true;
 	    else
