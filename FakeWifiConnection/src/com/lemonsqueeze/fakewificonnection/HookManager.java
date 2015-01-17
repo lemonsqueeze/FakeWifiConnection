@@ -21,7 +21,8 @@ public class HookManager
 	    filter = f;
 	}
     }
-    
+
+    // TODO if we expect many hooks use hash table instead
     private List<Hook> list = new ArrayList<Hook>();
    
     public void add(IntentFilter filter, BroadcastReceiver receiver, Context context)
@@ -31,9 +32,13 @@ public class HookManager
 
     public void remove(BroadcastReceiver receiver)
     {
-	for (Hook h: list)
+	Iterator<Hook> i = list.iterator();
+	while (i.hasNext())
+	{
+	    Hook h = i.next();
 	    if (h.receiver == receiver)
-		list.remove(h);
+		i.remove();
+	}
     }
 
     public void call(String action)

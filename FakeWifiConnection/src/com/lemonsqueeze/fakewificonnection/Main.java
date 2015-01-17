@@ -195,7 +195,7 @@ public class Main implements IXposedHookLoadPackage
       XposedHelpers.setObjectField((Object)info, "mMacAddress", "11:22:33:44:55:66");
       XposedHelpers.setObjectField((Object)info, "mIpAddress", addr);
       XposedHelpers.setIntField((Object)info, "mLinkSpeed", 65);  // Mbps
-      XposedHelpers.setIntField((Object)info, "mRssi", -55);
+      XposedHelpers.setIntField((Object)info, "mRssi", -50);
 
       return info;
   }
@@ -288,8 +288,8 @@ public class Main implements IXposedHookLoadPackage
       ctor.setAccessible(true);
       return ctor.newInstance(createWifiSsid(),		// SSID
 			      "66:55:44:33:22:11",	// BSSID      
-			      "[WPA-PSK-TKIP+CCMP][WPA2-PSK-TKIP-CCMP][WPS][ESS]", // capabilities
-			      -55,			// level   (RSSI)
+			      "[WPA-PSK-TKIP+CCMP][WPA2-PSK-TKIP-CCMP][ESS]", // capabilities
+			      -50,			// level   (RSSI)
 			      2462,			// frequency (MHz)   channel 11
 			      SystemClock.elapsedRealtime() * 1000);  // timestamp
   }  
@@ -556,7 +556,7 @@ public class Main implements IXposedHookLoadPackage
 	      log_call("startScan(), " + (doit ? "faking wifi" : "called"));
 	      if (doit)
 	      {
-		  param.setResult(null);	// cancel orig call
+		  param.setResult(true);	// cancel orig call
 		  hook_manager.call(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
 	      }
 	  }
@@ -612,30 +612,30 @@ public class Main implements IXposedHookLoadPackage
       // *************************************************************************************
       // Misc stuff
       
-      // intent receivers which need to be overridden
-      
-      // abstract Intent   registerReceiver(BroadcastReceiver receiver, IntentFilter filter)
-      // FIXME
-      //   - caller could register multiple receivers
-      //   - there's this one also:
-      //   abstract Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter,
-      //                                    String broadcastPermission, Handler scheduler)
-      //
+      // intent receivers which need overriding
 
       // registerReceiver(BroadcastReceiver, IntentFilter)
-      //   we can't hook Context.registerReceiver() which is abstract,
-      //   so hook ContextWrapper which Activity is derived of.
+      //   Context.registerReceiver() is abstract, so hook ContextWrapper
+      //   which Activity is derived of (and Service also).
+      // FIXME
+      //   - we let everything through
+      //   - there's this one also:
+      //       abstract Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter,
+      //                                        String broadcastPermission, Handler scheduler)      
       hook_method("android.content.ContextWrapper", lpparam.classLoader,
 		  "registerReceiver", BroadcastReceiver.class, IntentFilter.class, new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
+	  protected void beforeHookedMethod(MethodHookParam param) throws Throwable
 	  {
 	      BroadcastReceiver receiver = (BroadcastReceiver) param.args[0];
 	      IntentFilter filter = (IntentFilter) param.args[1];
+	      int nactions = filter.countActions();
 	      if (filter.hasAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
 	      {
 		  log_call("registerReceiver(SCAN_RESULTS) called");
+		  // Always let it through.
+		  // Otherwise have to keep track of them so unregister doesn't throw exception.
 		  hook_manager.add(filter, receiver, (Context) param.thisObject);
 	      }
 	  }
@@ -646,7 +646,7 @@ public class Main implements IXposedHookLoadPackage
 		  "unregisterReceiver", BroadcastReceiver.class, new XC_MethodHook()
       {
 	  @Override
-	  protected void afterHookedMethod(MethodHookParam param) throws Throwable
+	  protected void beforeHookedMethod(MethodHookParam param) throws Throwable
 	  {
 	      BroadcastReceiver receiver = (BroadcastReceiver) param.args[0];
 	      hook_manager.remove(receiver);
