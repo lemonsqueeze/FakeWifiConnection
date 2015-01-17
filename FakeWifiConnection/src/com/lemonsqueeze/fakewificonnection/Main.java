@@ -608,19 +608,47 @@ public class Main implements IXposedHookLoadPackage
 
 
       // *************************************************************************************
-      // Misc stuff
+      // Broadcasts which need filtering
 
-	  
-      // intent receivers which need overriding
+      //                    ConnectivityManager.CONNECTIVITY_ACTION
+      hook_manager.add_action("android.net.conn.CONNECTIVITY_CHANGE", null);
 
-      hook_manager.add_action(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION, null);
-      hook_manager.add_action(WifiManager.NETWORK_STATE_CHANGED_ACTION, new IntentGenCallback()
+      //                            WifiManager.SCAN_RESULTS_AVAILABLE_ACTION
+      hook_manager.add_action("android.net.wifi.SCAN_RESULTS", null);
+      
+      //                            WifiManager.SUPPLICANT_STATE_CHANGED_ACTION
+      hook_manager.add_action("android.net.wifi.supplicant.STATE_CHANGE", null);
+      
+      //                            WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION
+      hook_manager.add_action("android.net.wifi.supplicant.CONNECTION_CHANGE", null);
+      
+      //                            WifiManager.WIFI_STATE_CHANGED_ACTION
+      hook_manager.add_action("android.net.wifi.WIFI_STATE_CHANGED", null);  // wifi enabled/disabled
+
+      //                            WifiManager.NETWORK_IDS_CHANGED_ACTION
+      hook_manager.add_action("android.net.wifi.NETWORK_IDS_CHANGED", null);
+
+      //                            WifiManager.RSSI_CHANGED_ACTION
+      hook_manager.add_action("android.net.wifi.RSSI_CHANGED", null);
+
+      //                            WifiManager.LINK_CONFIGURATION_CHANGED_ACTION	// undocumented
+      hook_manager.add_action("android.net.wifi.LINK_CONFIGURATION_CHANGED", null); 
+
+      //                            WifiManager.WIFI_AP_STATE_CHANGED_ACTION		// undocumented
+      hook_manager.add_action("android.net.wifi.WIFI_AP_STATE_CHANGED", null);
+      
+      //                            WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION	// undocumented
+      hook_manager.add_action("android.net.wifi.CONFIGURED_NETWORKS_CHANGE", null);
+      
+      //                    WifiManager.NETWORK_STATE_CHANGED_ACTION
+      hook_manager.add_action("android.net.wifi.STATE_CHANGE", new IntentGenCallback()
       {
 	  public void handle(Intent intent)
 	      {
 		  // FIXME
 	      }
       });
+
 
       // registerReceiver(BroadcastReceiver, IntentFilter)
       //   Context.registerReceiver() is abstract, so hook ContextWrapper
