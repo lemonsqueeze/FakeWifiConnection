@@ -39,17 +39,12 @@ public class Main implements IXposedHookLoadPackage
 {
   private XSharedPreferences pref;
   private LoadPackageParam lpparam;
-    
-  private HookManager hook_manager = new HookManager();
 
   // debug level: 0=quiet, 1=log function calls, 2=also dump stack traces.
-  // install 'Preferences Manager' to change default (0)
-  private int debug_level()
-  {
-      if (pref == null)
-	  return 1;
-      return pref.getInt("debug_level", 0);
-  }
+  // install 'Preferences Manager' to change default (0)    
+  private int debug_level;    
+    
+  private HookManager hook_manager = new HookManager();
 
   public boolean hack_enabled()
   {
@@ -65,7 +60,7 @@ public class Main implements IXposedHookLoadPackage
 
   public void log(String s)
   {
-      if (debug_level() < 1)
+      if (debug_level < 1)
 	  return;
 
       //XposedBridge.log("FakeWifiConnection: " + s);
@@ -75,15 +70,14 @@ public class Main implements IXposedHookLoadPackage
 
   public void log_call(String s)
   {
-      int debug = debug_level();
-      if (debug < 1)
+      if (debug_level < 1)
 	  return;
 
       //XposedBridge.log("FakeWifiConnection: " + s);
       Log.d("FakeWifiConnection", lpparam.packageName + " " + s);
       //Log.d("FakeWifiConnection", s);
       
-      if (debug > 1)
+      if (debug_level > 1)
 	  dump_stack_trace();
   }
 
@@ -326,8 +320,9 @@ public class Main implements IXposedHookLoadPackage
   @Override
   public void handleLoadPackage(final LoadPackageParam lpp) throws Throwable
   {
-      pref = new XSharedPreferences(Main.class.getPackage().getName(), "pref");      
+      pref = new XSharedPreferences(Main.class.getPackage().getName(), "pref");
       lpparam = lpp;
+      debug_level = pref.getInt("debug_level", 0);
       log("Loaded app: " + lpparam.packageName);	
       
       hook_method((Class)Activity.class, "onResume", new XC_MethodHook()
