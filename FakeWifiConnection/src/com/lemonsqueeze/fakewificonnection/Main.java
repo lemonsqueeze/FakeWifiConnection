@@ -180,12 +180,16 @@ public class Main implements IXposedHookLoadPackage
       IPInfo ip = getIPInfo();
       InetAddress addr = (ip != null ? ip.addr : null);
       XposedHelpers.setIntField((Object)info, "mNetworkId", 1);
-      XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid());
       XposedHelpers.setObjectField((Object)info, "mSupplicantState", SupplicantState.COMPLETED);
       XposedHelpers.setObjectField((Object)info, "mBSSID", "66:55:44:33:22:11");
       XposedHelpers.setObjectField((Object)info, "mMacAddress", "11:22:33:44:55:66");
       XposedHelpers.setObjectField((Object)info, "mIpAddress", addr);
       XposedHelpers.setIntField((Object)info, "mLinkSpeed", 65);  // Mbps
+
+      try
+      {  XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid()); } // Kitkat
+      catch (Error e)
+      {  XposedHelpers.setObjectField((Object)info, "mSSID", "FakeWifi");  }	      // Jellybean      
 
       return info;
   }
