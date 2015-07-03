@@ -190,7 +190,7 @@ public class Main implements IXposedHookLoadPackage
       XposedHelpers.setObjectField((Object)info, "mIpAddress", addr);
       XposedHelpers.setIntField((Object)info, "mLinkSpeed", 65);  // Mbps
       XposedHelpers.setIntField((Object)info, "mFrequency", 5000); // MHz
-      XposedHelpers.setIntField((Object)info, " mRssi", 200); //MAX_RSSI
+      XposedHelpers.setIntField((Object)info, "mRssi", 200); // MAX_RSSI
 
       try
       {  XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid()); } // Kitkat
