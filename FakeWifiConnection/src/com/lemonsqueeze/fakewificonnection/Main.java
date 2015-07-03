@@ -14,6 +14,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.SupplicantState;
 import android.net.DhcpInfo;
+import android.os.Build;
 import android.util.Log;
 
 import java.net.NetworkInterface;
@@ -146,9 +147,13 @@ public class Main implements IXposedHookLoadPackage
 
   public NetworkInfo createNetworkInfo(final int type, final boolean connected) throws Exception
   {
-      Constructor<NetworkInfo> ctor = NetworkInfo.class.getDeclaredConstructor(int.class);
-      ctor.setAccessible(true);
-      NetworkInfo networkInfo = ctor.newInstance(0);
+      NetworkInfo networkInfo;
+      if (Build.VERSION.SDK_INT >= 21) {
+          networkInfo = (NetworkInfo) XposedHelpers.newInstance(NetworkInfo.class, 0, 0, null, null);
+      }
+      else {
+          networkInfo = (NetworkInfo) XposedHelpers.newInstance(NetworkInfo.class, 0);
+      }
 
       XposedHelpers.setIntField((Object)networkInfo, "mNetworkType", type);
       XposedHelpers.setObjectField((Object)networkInfo, "mTypeName", "WIFI");
@@ -175,7 +180,6 @@ public class Main implements IXposedHookLoadPackage
 
       // NEEDED ?
       //    private boolean mHiddenSSID;
-      //    private int mRssi;	/** Received Signal Strength Indicator */
 
       IPInfo ip = getIPInfo();
       InetAddress addr = (ip != null ? ip.addr : null);
@@ -185,6 +189,8 @@ public class Main implements IXposedHookLoadPackage
       XposedHelpers.setObjectField((Object)info, "mMacAddress", "11:22:33:44:55:66");
       XposedHelpers.setObjectField((Object)info, "mIpAddress", addr);
       XposedHelpers.setIntField((Object)info, "mLinkSpeed", 65);  // Mbps
+      XposedHelpers.setIntField((Object)info, "mFrequency", 5000); // MHz
+      XposedHelpers.setIntField((Object)info, " mRssi", 200); //MAX_RSSI
 
       try
       {  XposedHelpers.setObjectField((Object)info, "mWifiSsid", createWifiSsid()); } // Kitkat
