@@ -21,10 +21,7 @@ import java.net.NetworkInterface;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.*;
-import org.apache.http.conn.util.InetAddressUtils;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
+import java.util.regex.Pattern;
 
 
 public class Main implements IXposedHookLoadPackage
@@ -223,7 +220,7 @@ public class Main implements IXposedHookLoadPackage
 		  if (!addr.isLoopbackAddress())
 		  {
 		      String sAddr = addr.getHostAddress().toUpperCase();
-		      boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+		      boolean isIPv4 = isIPv4Address(sAddr);
 		      if (isIPv4)
 		      {
 			  IPInfo info = new IPInfo();
@@ -239,6 +236,12 @@ public class Main implements IXposedHookLoadPackage
 	  }
       } catch (Exception ex) { } // for now eat exceptions
       return null;
+  }
+  
+  
+  public static boolean isIPv4Address(String input) {
+      Pattern IPV4_PATTERN = Pattern.compile("^(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}$");
+      return IPV4_PATTERN.matcher(input).matches();
   }
 
   public static int netmask_to_hex(int netmask_slash)
