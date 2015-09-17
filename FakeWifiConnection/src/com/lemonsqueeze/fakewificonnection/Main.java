@@ -186,7 +186,7 @@ public class Main implements IXposedHookLoadPackage
       XposedHelpers.setObjectField((Object)info, "mMacAddress", "11:22:33:44:55:66");
       XposedHelpers.setObjectField((Object)info, "mIpAddress", addr);
       XposedHelpers.setIntField((Object)info, "mLinkSpeed", 65);  // Mbps
-      XposedHelpers.setIntField((Object)info, "mFrequency", 5000); // MHz
+      if (Build.VERSION.SDK_INT >= 21) XposedHelpers.setIntField((Object)info, "mFrequency", 5000); // MHz
       XposedHelpers.setIntField((Object)info, "mRssi", 200); // MAX_RSSI
 
       try
