@@ -6,32 +6,26 @@ package com.lemonsqueeze.fakewificonnection;
 //import android.os.*;
 //import android.view.*;
 //import android.util.*;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.TimePickerDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.content.pm.PackageInfo;
+import android.os.Bundle;
+import android.view.View;
 import android.widget.*;
-//import android.content.*;
-//import android.net.*;
-
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.DialogInterface.OnClickListener;
-import android.content.SharedPreferences.Editor;
-import android.content.pm.PackageInfo;
-import android.net.Uri;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.AbsListView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.Toast;
+//import android.content.*;
+//import android.net.*;
 
 public class MainActivity extends Activity
 {
@@ -43,6 +37,7 @@ public class MainActivity extends Activity
   SharedPreferences pref;  
   ListView app_list;		//listview with checkboxes which will contain apps
   Switch masterSwitch;
+    Button scheduleChooser;
     
   ArrayList<PInfo> pinfos;	//PInfo object for each app
     
@@ -130,8 +125,86 @@ public class MainActivity extends Activity
       
       masterSwitch = (Switch) findViewById(R.id.masterswitch);
       masterSwitch.setChecked(pref.getBoolean("master", true));
+
+      scheduleChooser = (Button) findViewById(R.id.scheduleChooser);
+      loadSchedule();
+      scheduleChooser.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+              scheduleClick();
+          }
+      });
+
+      scheduleChooser.setOnLongClickListener(new View.OnLongClickListener() {
+          @Override
+          public boolean onLongClick(View v) {
+              pref.edit()
+                      .putInt("scheduleStartHour", -1)
+                      .putInt("scheduleStartMinute", -1)
+                      .putInt("scheduleEndHour", -1)
+                      .putInt("scheduleEndMinute", -1)
+                      .apply();
+              loadSchedule();
+              return true;
+          }
+      });
   }
 
+    private int scheduleStartHour = -1;
+    private int scheduleStartMinute = -1;
+    private int scheduleEndHour = -1;
+    private int scheduleEndMinute = -1;
+
+    private void loadSchedule() {
+        scheduleStartHour = pref.getInt("scheduleStartHour", -1);
+        scheduleStartMinute = pref.getInt("scheduleStartMinute", -1);
+        scheduleEndHour = pref.getInt("scheduleEndHour", -1);
+        scheduleEndMinute = pref.getInt("scheduleEndMinute", -1);
+
+        if (scheduleStartHour != -1) {
+            scheduleChooser.setText("Scheduled from " +
+                    scheduleStartHour + ":" + String.format("%02d", scheduleStartMinute) + " to " +
+                    scheduleEndHour + ":" + String.format("%02d", scheduleEndMinute));
+        } else {
+            scheduleChooser.setText("Schedule");
+        }
+    }
+
+    private void scheduleClick() {
+        TimePickerDialog startTimePicker = new TimePickerDialog(this, new TimePickerDialog.OnTimeSetListener() {
+            @Override
+            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                final int newStartHour = hourOfDay;
+                final int newStartMinute = minute;
+
+                TimePickerDialog endTimePicker = new TimePickerDialog(MainActivity.this, new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                        scheduleStartHour = newStartHour;
+                        scheduleStartMinute = newStartMinute;
+                        scheduleEndHour = hourOfDay;
+                        scheduleEndMinute = minute;
+
+                        pref.edit()
+                                .putInt("scheduleStartHour", scheduleStartHour)
+                                .putInt("scheduleStartMinute", scheduleStartMinute)
+                                .putInt("scheduleEndHour", scheduleEndHour)
+                                .putInt("scheduleEndMinute", scheduleEndMinute)
+                                .apply();
+
+                        Toast.makeText(MainActivity.this, "Schedule is set. Long tap the button to clear.", Toast.LENGTH_LONG).show();
+
+                        loadSchedule();
+                    }
+                }, scheduleEndHour != -1 ? scheduleEndHour : 0, scheduleEndMinute != -1 ? scheduleEndMinute : 0, true);
+                endTimePicker.setTitle("Choose end time:");
+                endTimePicker.show();
+            }
+        }, scheduleStartHour != -1 ? scheduleStartHour : 0, scheduleStartMinute != -1 ? scheduleStartMinute : 0, true);
+        startTimePicker.setTitle("Choose start time:");
+        startTimePicker.show();
+  }
+    
   //prompt to prevent quit without save
   @Override
   public void onBackPressed()

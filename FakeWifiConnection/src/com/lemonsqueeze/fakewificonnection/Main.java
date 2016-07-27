@@ -1,33 +1,28 @@
 package com.lemonsqueeze.fakewificonnection;
 
-import de.robv.android.xposed.*;
-import de.robv.android.xposed.XC_MethodHook.MethodHookParam;
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
-import de.robv.android.xposed.XposedBridge;
-
-//import android.content.Context;
-//import android.content.SharedPreferences;
 import android.app.Activity;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.wifi.WifiManager;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.SupplicantState;
 import android.net.DhcpInfo;
+import android.net.NetworkInfo;
+import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.util.Log;
+import de.robv.android.xposed.*;
+import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
-import java.net.NetworkInterface;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.util.*;
+import java.net.NetworkInterface;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
-
 
 public class Main implements IXposedHookLoadPackage
 {
   private XSharedPreferences pref;
-  private LoadPackageParam lpparam;
+  private XC_LoadPackage.LoadPackageParam lpparam;
 
   // debug level: 0=quiet, 1=log function calls, 2=also dump stack traces.
   // install 'Preferences Manager' to change default (0)
@@ -38,11 +33,38 @@ public class Main implements IXposedHookLoadPackage
       return pref.getInt("debug_level", 0);
   }
 
+  private boolean isTimeWithinSchedule() {
+	  int scheduleStartHour = pref.getInt("scheduleStartHour", -1);
+      int scheduleStartMinute = pref.getInt("scheduleStartHour", -1);
+      int scheduleStartMinuteOfDay = scheduleStartHour * 60 + scheduleStartMinute;
+
+      if (scheduleStartHour == -1) {
+          return true;
+      }
+
+      int scheduleEndHour = pref.getInt("scheduleEndHour", -1);
+      int scheduleEndMinute = pref.getInt("scheduleEndMinute", -1);
+      int scheduleEndMinuteOfDay = scheduleEndHour * 60 + scheduleEndMinute;
+
+      int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+      int minute = Calendar.getInstance().get(Calendar.MINUTE);
+      int minuteOfDay = hour * 60 + minute;
+
+      boolean isScheduleWithinOneDay = scheduleStartMinuteOfDay <= scheduleEndMinuteOfDay;
+
+      if (isScheduleWithinOneDay) {
+          return scheduleStartMinuteOfDay <= minuteOfDay && minuteOfDay <= scheduleEndMinuteOfDay;
+      } else {
+          return minuteOfDay >= scheduleStartHour || minuteOfDay <= scheduleEndHour;
+      }
+  }
+
   public boolean hack_enabled()
   {
       boolean master_switch = pref.getBoolean("master", true);
+      boolean timeWithinSchedule = isTimeWithinSchedule();
       boolean app_enabled = pref.getBoolean(lpparam.packageName, false);
-      return (master_switch && app_enabled);
+      return (master_switch && app_enabled && timeWithinSchedule);
   }
 
   public void dump_stack_trace()
@@ -66,7 +88,7 @@ public class Main implements IXposedHookLoadPackage
       if (debug < 1)
 	  return;
 
-      //XposedBridge.log("FakeWifiConnection: " + s);
+      XposedBridge.log("FakeWifiConnection: " + s);
       Log.d("FakeWifiConnection", lpparam.packageName + " " + s);
       //Log.d("FakeWifiConnection", s);
       
@@ -74,7 +96,7 @@ public class Main implements IXposedHookLoadPackage
 	  dump_stack_trace();
   }
 
-  public void doit_networkinfo(String called, MethodHookParam param) throws Exception
+  public void doit_networkinfo(String called, XC_MethodHook.MethodHookParam param) throws Exception
   {
       if (!hack_enabled())
       {
@@ -106,7 +128,7 @@ public class Main implements IXposedHookLoadPackage
       return longer;
   }
 
-  public void doit_allnetworkinfo(String called, MethodHookParam param) throws Exception
+  public void doit_allnetworkinfo(String called, XC_MethodHook.MethodHookParam param) throws Exception
   {
       if (!hack_enabled())
       {
@@ -304,7 +326,7 @@ public class Main implements IXposedHookLoadPackage
   }
   
   @Override
-  public void handleLoadPackage(final LoadPackageParam lpp) throws Throwable
+  public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam lpp) throws Throwable
   {
       pref = new XSharedPreferences(Main.class.getPackage().getName(), "pref");      
       lpparam = lpp;
