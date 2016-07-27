@@ -16,12 +16,10 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.*;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -197,7 +195,6 @@ public class MainActivity extends Activity
                         Toast.makeText(MainActivity.this, "Schedule is set. Long tap the button to clear.", Toast.LENGTH_LONG).show();
 
                         loadSchedule();
-                        Toast.makeText(MainActivity.this, "" + isTimeWithinSchedule(), Toast.LENGTH_SHORT).show();
                     }
                 }, scheduleEndHour != -1 ? scheduleEndHour : 0, scheduleEndMinute != -1 ? scheduleEndMinute : 0, true);
                 endTimePicker.setTitle("Choose end time:");
@@ -208,32 +205,6 @@ public class MainActivity extends Activity
         startTimePicker.show();
   }
     
-    private boolean isTimeWithinSchedule() {
-        int scheduleStartHour = pref.getInt("scheduleStartHour", -1);
-        int scheduleStartMinute = pref.getInt("scheduleStartHour", -1);
-        int scheduleStartMinuteOfDay = scheduleStartHour * 60 + scheduleStartMinute;
-
-        if (scheduleStartHour == -1) {
-            return true;
-        }
-
-        int scheduleEndHour = pref.getInt("scheduleEndHour", -1);
-        int scheduleEndMinute = pref.getInt("scheduleEndMinute", -1);
-        int scheduleEndMinuteOfDay = scheduleEndHour * 60 + scheduleEndMinute;
-
-        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        int minute = Calendar.getInstance().get(Calendar.MINUTE);
-        int minuteOfDay = hour * 60 + minute;
-
-        boolean isScheduleWithinOneDay = scheduleStartMinuteOfDay <= scheduleEndMinuteOfDay;
-
-        if (isScheduleWithinOneDay) {
-            return scheduleStartMinuteOfDay <= minuteOfDay && minuteOfDay <= scheduleEndMinuteOfDay;
-        } else {
-            return minuteOfDay >= scheduleStartHour || minuteOfDay <= scheduleEndHour;
-        }
-    }
-
   //prompt to prevent quit without save
   @Override
   public void onBackPressed()
